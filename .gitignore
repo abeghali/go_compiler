@@ -1,0 +1,7 @@
+# MacOS files:
+.DS_Store
+
+# Repository Directories and files:
+data/
+get_game_data.py
+project.txt
