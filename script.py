@@ -11,6 +11,8 @@ from subprocess import PIPE, run
 import sys
 
 GAME_DIR_PATTERN = "_game"
+GAME_CODE_EXTENSION = ".go"
+GAME_FILE_COMPILE_COMMAND = ["go", "build"]
 
 # =====================================================================================================================
 
@@ -35,6 +37,11 @@ def main():
     # "source_dir" will be "C:\Users\<name of user>\my_files\my_games_folder" or
     # "/Users/<name of user/my_files/my_games_folder"
     source_dir = os.path.join(cwd, source)
+
+    # If the source directory cannot be found, exit the script.
+    if not os.path.exists(source_dir):
+        print("Source directory cannot be found.")
+        sys.exit(1)
 
     # Let's assume that the "target" argument that was passed is "my_new_games_folder", now "target_dir" will be
     # "C:\Users\<name of user>\my_files\my_new_games_folder" or "/Users/<name of user/my_files/my_new_games_folder"
@@ -62,6 +69,15 @@ def main():
         dest_path = os.path.join(target_dir, dest)
         # Copies all the game folders from their current location to the new location.
         copy_dirs(src, dest_path)
+
+        # Calls the function that compiles the game code.
+        compile_game_code(dest_path)
+
+    # Creates a path for the metadata JSON file.
+    metadata_file_path = os.path.join(target_dir, "metadata.json")
+
+    # Calls the function and passes the metadata JSON file path and the new list of the game directories.
+    make_json_metadata_file(metadata_file_path, new_game_dirs)
 
 # =====================================================================================================================
 
@@ -111,6 +127,62 @@ def copy_dirs(source, dest):
         shutil.rmtree(dest)
     
     shutil.copytree(source,dest)
+
+# =====================================================================================================================
+
+# This function creates a file at "path" containing the names and number of game directories.
+def make_json_metadata_file(path, game_dirs):
+
+    # A dictionary of the information that will be used to create the file.
+    data = {
+        "gameNames": game_dirs,
+        "numberOfGames": len(game_dirs)
+    }
+
+    # Create a file at path with "w" for write (and overwrite if it already exists).
+    # The "with" statement cleans up and closes the file as soon as the code finishes running.
+    with open(path, "w") as f:
+        # "dump" (not to be confused with "dumps" for dump string) stores the object, in this case the "data"
+        # dictionary, into the file.
+        json.dump(data, f, indent=2)
+
+# =====================================================================================================================
+
+# This function compiles the game code by calling the "run_command" function.
+def compile_game_code(path):
+
+    code_file_name = None
+
+    for root, dirs, files in os.walk(path):
+        for file in files:
+            if file.endswith(GAME_CODE_EXTENSION):
+                code_file_name = file
+                break
+        break
+
+    if code_file_name is None:
+        return
+    
+    command = GAME_FILE_COMPILE_COMMAND + [code_file_name]
+
+    run_command(path, command)
+
+# =====================================================================================================================
+
+# This function runs any command that is passed to it.
+def run_command(path, command):
+    cwd = os.getcwd()
+    
+    # Changes the directory to the directory of the game's file(s).
+    os.chdir(path)
+
+    # Runs the command.
+    result = run(command, stdin=PIPE, stdout=PIPE, universal_newlines=True)
+
+    #print("The compile command result: ", result)
+
+    # Changes the directory back to the same directory as the one in the beginning of the function.
+    os.chdir(cwd)
 
 # =====================================================================================================================
 

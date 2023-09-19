@@ -7,4 +7,4 @@ get_game_data.py
 project.txt
 
 # VS Code Files
-.vscode/
+.vscode/*
