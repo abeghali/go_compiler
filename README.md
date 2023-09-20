@@ -1,1 +1,1 @@
-# Automation Script
+# Go Compiler Script
